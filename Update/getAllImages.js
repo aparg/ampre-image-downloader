@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const getAllImages = async () => {
   // Read listing keys from test.txt
-  // await getAllPropertiesKeys();
+  await getAllPropertiesKeys();
   const listingKeys = JSON.parse(fs.readFileSync("test.txt", "utf-8"));
   const imagesDir = path.join(__dirname, "../Data/Images");
   if (!fs.existsSync(imagesDir)) {
