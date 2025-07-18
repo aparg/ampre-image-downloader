@@ -1,5 +1,3 @@
 # Ignore all files inside Data and Data/Images, but not the directories themselves
 /Data/*
-!/Data/
 /Data/Images/*
-!/Data/Images/
