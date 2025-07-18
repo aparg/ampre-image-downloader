@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const getAllImages = async () => {
   // Read listing keys from test.txt
-  await getAllPropertiesKeys();
+  // await getAllPropertiesKeys();
   const listingKeys = JSON.parse(fs.readFileSync("test.txt", "utf-8"));
   const imagesDir = path.join(__dirname, "../Data/Images");
   if (!fs.existsSync(imagesDir)) {
@@ -13,7 +13,7 @@ const getAllImages = async () => {
 
   for (const key of listingKeys) {
     console.log("Fetching media request for " + key);
-    const url = `https://query.ampre.ca/odata/Media?$select=MediaURL&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
+    const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
     const response = await fetch(url, {
       headers: {
         Authorization: process.env.BEARER_TOKEN_FOR_API,
@@ -21,6 +21,11 @@ const getAllImages = async () => {
     });
     const data = await response.json();
     if (Array.isArray(data.value)) {
+      // Sort so PreferredPhotoYN === true come first
+      data.value.sort(
+        (a, b) => (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
+      );
+      console.log(data.value.map((item) => item.PreferredPhotoYN));
       for (let i = 0; i < data.value.length; i++) {
         const mediaURL = data.value[i].MediaURL;
         if (mediaURL) {

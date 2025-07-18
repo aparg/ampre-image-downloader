@@ -61,7 +61,7 @@ const updateImages = async () => {
   // Now fetch and save images for these keys
   for (const key of recentKeys) {
     console.log("Fetching media request for " + key);
-    const url = `https://query.ampre.ca/odata/Media?$select=MediaURL&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
+    const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
     const response = await fetch(url, {
       headers: {
         Authorization: process.env.BEARER_TOKEN_FOR_API,
@@ -69,6 +69,10 @@ const updateImages = async () => {
     });
     const data = await response.json();
     if (Array.isArray(data.value)) {
+      // Sort so PreferredPhotoYN === true come first
+      data.value.sort(
+        (a, b) => (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
+      );
       for (let i = 0; i < data.value.length; i++) {
         const mediaURL = data.value[i].MediaURL;
         if (mediaURL) {
