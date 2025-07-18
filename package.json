@@ -1,0 +1,20 @@
+{
+  "name": "api-image-download",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "getAllImages": "node Update/getAllImages.js",
+    "updateImages": "node Update/updateImages.js",
+    "deleteImages": "node Delete/deleteImages.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0"
+  }
+}
