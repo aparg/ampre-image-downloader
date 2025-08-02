@@ -11,7 +11,10 @@ const updateImages = async () => {
   // Get ISO string for 1 hour ago
   const now = new Date();
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
-
+  const allActivePropertiesPath = path.join(
+    __dirname,
+    "../Data/allActiveProperties.txt"
+  );
   let lastTimestamp = oneHourAgo;
   let lastListingKey = 0;
   let keepGoing = true;
@@ -29,6 +32,7 @@ const updateImages = async () => {
       },
     });
     const data = await response.json();
+    console.log(data);
     if (data.value && data.value.length > 0) {
       for (const item of data.value) {
         recentKeys.push(item.ListingKey);
@@ -60,7 +64,6 @@ const updateImages = async () => {
 
   // Now fetch and save images for these keys
   for (const key of recentKeys) {
-    console.log("Fetching media request for " + key);
     const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
     const response = await fetch(url, {
       headers: {
@@ -73,16 +76,25 @@ const updateImages = async () => {
       data.value.sort(
         (a, b) => (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
       );
+      const allProperties = fs.readFileSync(allActivePropertiesPath);
+      const array = JSON.parse(allProperties);
+      array.push(key);
+      // console.log(array);
+      fs.writeFileSync(allActivePropertiesPath, JSON.stringify(array));
       for (let i = 0; i < data.value.length; i++) {
         const mediaURL = data.value[i].MediaURL;
+
         if (mediaURL) {
           const imgRes = await fetch(mediaURL);
           const arrayBuffer = await imgRes.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           fs.writeFileSync(path.join(imagesDir, `${key}-${i}.jpg`), buffer);
+          // console.log(allProperties);
+
           console.log(`Downloaded image for ${key}-${i}`);
         }
       }
+      // const data = fs.readFileSync("./Data/Images/allActiveProperties.txt");
     }
   }
 };
