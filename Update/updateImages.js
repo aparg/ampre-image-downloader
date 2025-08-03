@@ -22,7 +22,7 @@ const updateImages = async () => {
 
   while (keepGoing) {
     // Fetch listings modified or with media changed in the last hour
-    let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+    let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt 'X12314516') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
     const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
       filter
     )}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
@@ -76,6 +76,7 @@ const updateImages = async () => {
       data.value.sort(
         (a, b) => (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
       );
+      console.log("ETA");
       const allProperties = fs.readFileSync(allActivePropertiesPath);
       const array = JSON.parse(allProperties);
       array.push(key);
@@ -88,6 +89,7 @@ const updateImages = async () => {
           const imgRes = await fetch(mediaURL);
           const arrayBuffer = await imgRes.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
+          console.log("ETA1");
           fs.writeFileSync(path.join(imagesDir, `${key}-${i}.jpg`), buffer);
           // console.log(allProperties);
 

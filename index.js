@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-
+const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 
@@ -10,20 +10,66 @@ app.use(express.json());
 const PORT = process.env.PORT || 3001;
 require("dotenv").config();
 
-//make images available
+// Middleware to handle image quality reduction
+const imageQualityMiddleware = (req, res, next) => {
+  const isCardImage = req.query.cardImage === "true";
+
+  if (!isCardImage) {
+    return next(); // Continue to static middleware for normal quality
+  }
+
+  // Get the requested file path
+  const imagePath = path.join(__dirname, "./Data/Images", req.path);
+
+  // Check if file exists
+  if (!fs.existsSync(imagePath)) {
+    return res.status(404).send("Image not found");
+  }
+
+  // Check if it's an image file
+  const ext = path.extname(imagePath).toLowerCase();
+  const supportedFormats = [".jpg", ".jpeg", ".png", ".webp"];
+
+  if (!supportedFormats.includes(ext)) {
+    return next(); // Not an image, continue to static middleware
+  }
+
+  // Set cache headers for low quality images
+  res.set({
+    "Cache-Control": "public, max-age=3600",
+    Expires: new Date(Date.now() + 3600 * 1000).toUTCString(),
+    "Content-Type": `image/${ext === ".jpg" ? "jpeg" : ext.slice(1)}`,
+  });
+
+  // Process image with lower quality
+  sharp(imagePath)
+    .jpeg({ quality: 60 }) // Reduce quality to 60%
+    .png({ quality: 60 })
+    .webp({ quality: 60 })
+    .toBuffer()
+    .then((buffer) => {
+      res.send(buffer);
+    })
+    .catch((err) => {
+      console.error("Error processing image:", err);
+      next(); // Fallback to original image
+    });
+};
+
+// Updated route with quality middleware
 app.use(
   "/images",
   cors(),
+  imageQualityMiddleware, // Add this before the static middleware
   express.static(path.join(__dirname, "./Data/Images"), {
-    maxAge: "2d", // 2 days in Express format
+    maxAge: "6h",
     etag: true,
     lastModified: true,
-    index: false, // Don't serve directory listings
+    index: false,
     setHeaders: (res, path, stat) => {
-      // Set aggressive caching for 2 days
       res.set({
-        "Cache-Control": "public, max-age=172800", // 2 days in seconds
-        Expires: new Date(Date.now() + 172800000).toUTCString(), // 2 days from now
+        "Cache-Control": "public, max-age=3600",
+        Expires: new Date(Date.now() + 3600 * 1000).toUTCString(),
       });
     },
   })

@@ -2,3 +2,4 @@
 /Data/*
 /Data/Images/*
 .env
+/node_modules/*
