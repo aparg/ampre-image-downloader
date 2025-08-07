@@ -84,6 +84,10 @@ app.get("/api/listings/:listingKey/photo-count", (req, res) => {
   res.json({ listingKey, photoCount: count });
 });
 
+app.get("/", (req, res) => {
+  res.json({ msg: "Welcome to image management app" });
+});
+
 app.listen(PORT, () => {
   console.log(
     `${new Date(Date.now()).toLocaleString()}: Server running on port: ${PORT}`
