@@ -17,7 +17,6 @@ const imageQualityMiddleware = (req, res, next) => {
   if (!isCardImage) {
     return next(); // Continue to static middleware for normal quality
   }
-
   // Get the requested file path
   const imagePath = path.join(__dirname, "./Data/Images", req.path);
 
@@ -43,9 +42,8 @@ const imageQualityMiddleware = (req, res, next) => {
 
   // Process image with lower quality
   sharp(imagePath)
-    .jpeg({ quality: 60 }) // Reduce quality to 60%
-    .png({ quality: 60 })
-    .webp({ quality: 60 })
+    .jpeg({ quality: 20 }) // Reduce quality to 60%
+
     .toBuffer()
     .then((buffer) => {
       res.send(buffer);
