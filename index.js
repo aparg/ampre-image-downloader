@@ -7,7 +7,7 @@ const path = require("path");
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 require("dotenv").config();
 
 // Middleware to handle image quality reduction
@@ -85,6 +85,7 @@ app.get("/api/listings/:listingKey/photo-count", (req, res) => {
 });
 
 app.get("/", (req, res) => {
+  console.log("Received request");
   res.json({ msg: "Welcome to image management app" });
 });
 
