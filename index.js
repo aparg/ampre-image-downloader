@@ -40,17 +40,24 @@ const imageQualityMiddleware = (req, res, next) => {
     "Content-Type": `image/${ext === ".jpg" ? "jpeg" : ext.slice(1)}`,
   });
 
-  // Process image with lower quality
-  sharp(imagePath)
-    .jpeg({ quality: 20 }) // Reduce quality to 60%
+  const transformer = sharp(imagePath);
 
+  transformer
+    .jpeg({ quality: 20 })
     .toBuffer()
     .then((buffer) => {
       res.send(buffer);
     })
     .catch((err) => {
       console.error("Error processing image:", err);
-      next(); // Fallback to original image
+      transformer.destroy(); // Clean up Sharp instance
+      next();
+    })
+    .finally(() => {
+      // Ensure cleanup happens
+      if (transformer) {
+        transformer.destroy();
+      }
     });
 };
 
