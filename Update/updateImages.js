@@ -11,6 +11,7 @@ const updateImages = async () => {
   // Get ISO string for 1 hour ago
   const now = new Date();
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+  const nowTime = new Date(now.getTime()).toISOString();
   const allActivePropertiesPath = path.join(
     __dirname,
     "../Data/allActiveProperties.txt"
@@ -22,7 +23,8 @@ const updateImages = async () => {
 
   while (keepGoing) {
     // Fetch listings modified or with media changed in the last hour
-    let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt 'X12314516') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+    // let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt 'X12314516') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+    let filter = `((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
     const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
       filter
     )}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
@@ -32,7 +34,6 @@ const updateImages = async () => {
       },
     });
     const data = await response.json();
-    console.log(data);
     if (data.value && data.value.length > 0) {
       for (const item of data.value) {
         recentKeys.push(item.ListingKey);
@@ -76,7 +77,6 @@ const updateImages = async () => {
       data.value.sort(
         (a, b) => (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
       );
-      console.log("ETA");
       const allProperties = fs.readFileSync(allActivePropertiesPath);
       const array = JSON.parse(allProperties);
       array.push(key);
@@ -89,7 +89,6 @@ const updateImages = async () => {
           const imgRes = await fetch(mediaURL);
           const arrayBuffer = await imgRes.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
-          console.log("ETA1");
           fs.writeFileSync(path.join(imagesDir, `${key}-${i}.jpg`), buffer);
           // console.log(allProperties);
 
@@ -99,6 +98,7 @@ const updateImages = async () => {
       // const data = fs.readFileSync("./Data/Images/allActiveProperties.txt");
     }
   }
+  console.log(`Downloaded images for ${oneHourAgo} to ${nowTime}`);
 };
 
 updateImages();
