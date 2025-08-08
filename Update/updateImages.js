@@ -10,7 +10,7 @@ const updateImages = async () => {
 
   // Get ISO string for 1 hour ago
   const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+  const oneHourAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
   const nowTime = new Date(now.getTime()).toISOString();
   const allActivePropertiesPath = path.join(
     __dirname,

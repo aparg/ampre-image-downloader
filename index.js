@@ -66,18 +66,21 @@ app.use(
   "/images",
   cors(),
   imageQualityMiddleware, // Add this before the static middleware
-  express.static(path.join(__dirname, "./Data/Images"), {
-    maxAge: "6h",
-    etag: true,
-    lastModified: true,
-    index: false,
-    setHeaders: (res, path, stat) => {
-      res.set({
-        "Cache-Control": "public, max-age=3600",
-        Expires: new Date(Date.now() + 3600 * 1000).toUTCString(),
-      });
-    },
-  })
+  express.static(
+    path.join(__dirname, "./Data/Images")
+    // ,{
+    //   maxAge: "6h",
+    //   etag: true,
+    //   lastModified: true,
+    //   index: false,
+    //   setHeaders: (res, path, stat) => {
+    //     res.set({
+    //       "Cache-Control": "public, max-age=3600",
+    //       Expires: new Date(Date.now() + 3600 * 1000).toUTCString(),
+    //     });
+    //   },
+    // }
+  )
 );
 
 app.get("/api/listings/:listingKey/photo-count", (req, res) => {
