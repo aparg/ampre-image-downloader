@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const sharp = require("sharp");
+// const sharp = require("sharp");
 const fs = require("fs");
 const path = require("path");
 
@@ -12,6 +12,7 @@ require("dotenv").config();
 
 // Middleware to handle image quality reduction
 const imageQualityMiddleware = (req, res, next) => {
+  // return next();
   const isCardImage = req.query.cardImage === "true";
 
   if (!isCardImage) {
@@ -66,29 +67,15 @@ app.use(
   "/images",
   cors(),
   imageQualityMiddleware, // Add this before the static middleware
-  express.static(
-    path.join(__dirname, "./Data/Images")
-    // ,{
-    //   maxAge: "6h",
-    //   etag: true,
-    //   lastModified: true,
-    //   index: false,
-    //   setHeaders: (res, path, stat) => {
-    //     res.set({
-    //       "Cache-Control": "public, max-age=3600",
-    //       Expires: new Date(Date.now() + 3600 * 1000).toUTCString(),
-    //     });
-    //   },
-    // }
-  )
+  express.static(path.join(__dirname, "./Data/Images"))
 );
 
-app.get("/api/listings/:listingKey/photo-count", (req, res) => {
+app.get("/api/listings/:listingKey/photo-count", async (req, res) => {
   const { listingKey } = req.params;
   const imagesDir = path.join(__dirname, "Data/Images");
   let count = 0;
   if (fs.existsSync(imagesDir)) {
-    const files = fs.readdirSync(imagesDir);
+    const files = await fs.promises.readdir(imagesDir);
     count = files.filter((file) => file.startsWith(`${listingKey}-`)).length;
   }
   res.json({ listingKey, photoCount: count });

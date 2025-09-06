@@ -49,21 +49,39 @@ const getAllPropertiesKeys = async () => {
     "Brampton",
     "Vaughan",
     "Markham",
+    "Richmond Hill",
     "Pickering",
     "Ajax",
+    "Whitby",
     "Oshawa",
+    "Newmarket",
+    "Aurora",
+    "King City",
+    "Caledon",
+    "Milton",
+    "Oakville",
     "Burlington",
-    "Richmond Hill",
     "Hamilton",
     "Guelph",
+    "Kitchener",
+    "Waterloo",
+    "Cambridge",
+    "Brantford",
     "Barrie",
     "St. Catharines",
     "Niagara Falls",
-    "Brantford",
-    "Kitchener",
-    "Cambridge",
+    "Grimsby",
+    "Peterborough",
+    "Kingston",
+    "Belleville",
+    "London",
+    "Woodstock",
+    "Stratford",
+    "Windsor",
   ];
-  const cityFilter = cities.map((city) => `City eq '${city}'`).join(" or ");
+  const cityFilter = cities
+    .map((city) => `contains(City,'${city}')`)
+    .join(" or ");
   let lastTimestamp = startDate;
   let lastListingKey = 0;
   let allKeys = [];

@@ -20,19 +20,59 @@ const updateImages = async () => {
   let lastListingKey = 0;
   let keepGoing = true;
   let recentKeys = [];
-
+  const cities = [
+    "Toronto",
+    "Mississauga",
+    "Brampton",
+    "Vaughan",
+    "Markham",
+    "Richmond Hill",
+    "Pickering",
+    "Ajax",
+    "Whitby",
+    "Oshawa",
+    "Newmarket",
+    "Aurora",
+    "King City",
+    "Caledon",
+    "Milton",
+    "Oakville",
+    "Burlington",
+    "Hamilton",
+    "Guelph",
+    "Kitchener",
+    "Waterloo",
+    "Cambridge",
+    "Brantford",
+    "Barrie",
+    "St. Catharines",
+    "Niagara Falls",
+    "Grimsby",
+    "Peterborough",
+    "Kingston",
+    "Belleville",
+    "London",
+    "Woodstock",
+    "Stratford",
+    "Windsor",
+  ];
+  const cityFilter = cities
+    .map((city) => `contains(City,'${city}')`)
+    .join(" or ");
   while (keepGoing) {
     // Fetch listings modified or with media changed in the last hour
     // let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt 'X12314516') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-    let filter = `((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+    let filter = `(${cityFilter}) and ((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
     const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
       filter
     )}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+    console.log(url);
     const response = await fetch(url, {
       headers: {
         Authorization: process.env.BEARER_TOKEN_FOR_API,
       },
     });
+    console.log(response);
     const data = await response.json();
     if (data.value && data.value.length > 0) {
       for (const item of data.value) {
