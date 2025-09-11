@@ -56,13 +56,12 @@ const updateImages = async () => {
     const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
       filter
     )}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
-    console.log(url);
+
     const response = await fetch(url, {
       headers: {
         Authorization: process.env.BEARER_TOKEN_FOR_API,
       },
     });
-    console.log(response);
     const data = await response.json();
     if (data.value && data.value.length > 0) {
       for (const item of data.value) {
