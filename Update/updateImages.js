@@ -92,10 +92,6 @@ const updateImages = async () => {
         ) {
           // Remove all images for this listing key
           const files = fs.readdirSync(imagesDir);
-          console.log(
-            "removing files for listing key. No. of files found: " +
-              files.length
-          );
           files.forEach((file) => {
             if (file.startsWith(item.ListingKey + "-")) {
               fs.unlinkSync(path.join(imagesDir, file));
@@ -123,6 +119,7 @@ const updateImages = async () => {
         Authorization: process.env.BEARER_TOKEN_FOR_API,
       },
     });
+    console.log(response);
     const data = await response.json();
     if (Array.isArray(data.value)) {
       // Sort so PreferredPhotoYN === true come first
