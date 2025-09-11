@@ -45,16 +45,6 @@ const updateImages = async () => {
     "Cambridge",
     "Brantford",
     "Barrie",
-    "St. Catharines",
-    "Niagara Falls",
-    "Grimsby",
-    "Peterborough",
-    "Kingston",
-    "Belleville",
-    "London",
-    "Woodstock",
-    "Stratford",
-    "Windsor",
   ];
   const cityFilter = cities
     .map((city) => `contains(City,'${city}')`)
@@ -62,7 +52,7 @@ const updateImages = async () => {
   while (keepGoing) {
     // Fetch listings modified or with media changed in the last hour
     // let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt 'X12314516') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-    let filter = `(${cityFilter}) and ((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or (MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'))`;
+    let filter = `(${cityFilter}) and ((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or (MediaChangeTimestamp gt ${oneHourAgo})) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
     const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
       filter
     )}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
