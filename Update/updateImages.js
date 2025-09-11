@@ -10,7 +10,7 @@ const updateImages = async () => {
 
   // Get ISO string for 1 hour ago
   const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+  const oneHourAgo = new Date(now.getTime() - 300 * 60 * 1000).toISOString();
   const nowTime = new Date(now.getTime()).toISOString();
   const allActivePropertiesPath = path.join(
     __dirname,
@@ -81,7 +81,9 @@ const updateImages = async () => {
       data.value = [...data.value, ...responseJson.value];
     }
     if (data.value && data.value.length > 0) {
+      console.log("Total data:" + data.value.length);
       for (const item of data.value) {
+        console.log("Pushing key " + item.ListingKey + " for download");
         recentKeys.push(item.ListingKey);
         // Remove previous images if MediaChangeTimestamp is within the last hour
         if (
@@ -90,6 +92,10 @@ const updateImages = async () => {
         ) {
           // Remove all images for this listing key
           const files = fs.readdirSync(imagesDir);
+          console.log(
+            "removing files for listing key. No. of files found: " +
+              files.length
+          );
           files.forEach((file) => {
             if (file.startsWith(item.ListingKey + "-")) {
               fs.unlinkSync(path.join(imagesDir, file));
