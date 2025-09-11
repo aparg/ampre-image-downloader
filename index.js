@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const sharp = require("sharp");
-const fs = require("fs");
+const fs = require("fs").promises; // Use promises version
+const fsSync = require("fs"); // Keep sync version for specific cases if needed
 const path = require("path");
 
 const app = express();
@@ -11,18 +12,21 @@ const PORT = process.env.PORT || 3002;
 require("dotenv").config();
 
 // Middleware to handle image quality reduction
-const imageQualityMiddleware = (req, res, next) => {
+const imageQualityMiddleware = async (req, res, next) => {
   // return next();
   const isCardImage = req.query.cardImage === "true";
 
   if (!isCardImage) {
     return next(); // Continue to static middleware for normal quality
   }
+
   // Get the requested file path
   const imagePath = path.join(__dirname, "./Data/Images", req.path);
 
-  // Check if file exists
-  if (!fs.existsSync(imagePath)) {
+  try {
+    // Non-blocking file existence check using fs.promises.access
+    await fs.access(imagePath, fsSync.constants.F_OK);
+  } catch (error) {
     return res.status(404).send("Image not found");
   }
 
@@ -41,25 +45,25 @@ const imageQualityMiddleware = (req, res, next) => {
     "Content-Type": `image/${ext === ".jpg" ? "jpeg" : ext.slice(1)}`,
   });
 
-  const transformer = sharp(imagePath);
+  let transformer;
 
-  transformer
-    .jpeg({ quality: 20 })
-    .toBuffer()
-    .then((buffer) => {
-      res.send(buffer);
-    })
-    .catch((err) => {
-      console.error("Error processing image:", err);
-      transformer.destroy(); // Clean up Sharp instance
-      next();
-    })
-    .finally(() => {
-      // Ensure cleanup happens
-      if (transformer) {
-        transformer.destroy();
-      }
-    });
+  try {
+    // Create Sharp instance from file path (Sharp handles file reading asynchronously)
+    transformer = sharp(imagePath);
+
+    const buffer = await transformer.jpeg({ quality: 20 }).toBuffer();
+
+    res.send(buffer);
+  } catch (err) {
+    console.error("Error processing image:", err);
+    // If Sharp fails, try to serve the original file
+    next();
+  } finally {
+    // Clean up Sharp instance
+    if (transformer) {
+      transformer.destroy();
+    }
+  }
 };
 
 // Updated route with quality middleware
@@ -74,10 +78,17 @@ app.get("/api/listings/:listingKey/photo-count", async (req, res) => {
   const { listingKey } = req.params;
   const imagesDir = path.join(__dirname, "Data/Images");
   let count = 0;
-  if (fs.existsSync(imagesDir)) {
-    const files = await fs.promises.readdir(imagesDir);
+
+  try {
+    const files = await fs.readdir(imagesDir);
     count = files.filter((file) => file.startsWith(`${listingKey}-`)).length;
+  } catch (error) {
+    // Directory doesn't exist or other error - count remains 0
+    if (error.code !== "ENOENT") {
+      console.error("Error reading images directory:", error);
+    }
   }
+
   res.json({ listingKey, photoCount: count });
 });
 
