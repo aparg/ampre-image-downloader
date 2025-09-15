@@ -74,10 +74,18 @@ app.get("/api/listings/:listingKey/photo-count", async (req, res) => {
   const { listingKey } = req.params;
   const imagesDir = path.join(__dirname, "Data/Images");
   let count = 0;
-  if (fs.existsSync(imagesDir)) {
+
+  try {
     const files = await fs.promises.readdir(imagesDir);
     count = files.filter((file) => file.startsWith(`${listingKey}-`)).length;
+  } catch (error) {
+    // Directory doesn't exist or other error - count remains 0
+    if (error.code !== "ENOENT") {
+      console.error("Error reading images directory:", error);
+    }
+    res.status(400).json({ error: "Failed to read images directory" });
   }
+
   res.json({ listingKey, photoCount: count });
 });
 
