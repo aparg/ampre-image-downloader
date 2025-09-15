@@ -11,18 +11,21 @@ const PORT = process.env.PORT || 3002;
 require("dotenv").config();
 
 // Middleware to handle image quality reduction
-const imageQualityMiddleware = (req, res, next) => {
+const imageQualityMiddleware = async (req, res, next) => {
   // return next();
   const isCardImage = req.query.cardImage === "true";
 
   if (!isCardImage) {
     return next(); // Continue to static middleware for normal quality
   }
+
   // Get the requested file path
   const imagePath = path.join(__dirname, "./Data/Images", req.path);
 
-  // Check if file exists
-  if (!fs.existsSync(imagePath)) {
+  try {
+    // Check if file exists using async stat
+    await fs.promises.access(imagePath);
+  } catch (error) {
     return res.status(404).send("Image not found");
   }
 
@@ -43,23 +46,18 @@ const imageQualityMiddleware = (req, res, next) => {
 
   const transformer = sharp(imagePath);
 
-  transformer
-    .jpeg({ quality: 20 })
-    .toBuffer()
-    .then((buffer) => {
-      res.send(buffer);
-    })
-    .catch((err) => {
-      console.error("Error processing image:", err);
-      transformer.destroy(); // Clean up Sharp instance
-      next();
-    })
-    .finally(() => {
-      // Ensure cleanup happens
-      if (transformer) {
-        transformer.destroy();
-      }
-    });
+  try {
+    const buffer = await transformer.jpeg({ quality: 20 }).toBuffer();
+    res.send(buffer);
+  } catch (err) {
+    console.error("Error processing image:", err);
+    next();
+  } finally {
+    // Ensure cleanup happens
+    if (transformer) {
+      transformer.destroy();
+    }
+  }
 };
 
 // Updated route with quality middleware
