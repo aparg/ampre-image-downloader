@@ -71,36 +71,29 @@ app.use(
   express.static(path.join(__dirname, "./Data/Images"))
 );
 
-app.get("/api/listings/:listingKey/photo-count", async (req, res) => {
-  const { listingKey } = req.params;
-  const imagesDir = path.join(__dirname, "Data/Images");
+// app.get("/api/listings/:listingKey/photo-count", async (req, res) => {
+//   const { listingKey } = req.params;
+//   const imagesDir = path.join(__dirname, "Data/Images");
 
-  try {
-    let count = 0;
-    const prefix = `${listingKey}-`;
+//   try {
+//     // Go back to readdir but with better filtering
+//     const files = await fs.promises.readdir(imagesDir, { withFileTypes: true });
+//     const prefix = `${listingKey}-`;
 
-    // Use a readable stream instead of loading all files into memory
-    const stream = fs.createReadStream(imagesDir);
-    const dirStream = fs.opendirSync(imagesDir);
+//     const count = files.filter(
+//       (dirent) => dirent.isFile() && dirent.name.startsWith(prefix)
+//     ).length;
 
-    // Process files one by one without loading all into memory
-    for await (const dirent of dirStream) {
-      if (dirent.name.startsWith(prefix)) {
-        count++;
-      }
-    }
-
-    await dirStream.close();
-    res.json({ listingKey, photoCount: count });
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      res.json({ listingKey, photoCount: 0 });
-    } else {
-      console.error("Error reading images directory:", error);
-      res.status(400).json({ error: "Failed to read images directory" });
-    }
-  }
-});
+//     res.json({ listingKey, photoCount: count });
+//   } catch (error) {
+//     if (error.code === "ENOENT") {
+//       res.json({ listingKey, photoCount: 0 });
+//     } else {
+//       console.error("Error reading images directory:", error);
+//       res.status(400).json({ error: "Failed to read images directory" });
+//     }
+//   }
+// });
 
 app.get("/", (req, res) => {
   console.log("Received request");
