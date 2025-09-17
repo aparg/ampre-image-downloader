@@ -10,8 +10,10 @@ const updateImages = async () => {
 
   // Get ISO string for 1 hour ago
   const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 500 * 60 * 1000).toISOString();
-  const nowTime = new Date(now.getTime()).toISOString();
+  const oneHourAgo = new Date(now.getTime() - 800 * 60 * 1000).toISOString();
+  //the now time is reduced by 3 minutes to account for any delays in the ampre server updates
+  //the time covered for each update iteration is 5 minutes total
+  const nowTime = new Date(now.getTime() - 300 * 60 * 1000).toISOString();
   const allActivePropertiesPath = path.join(
     __dirname,
     "../Data/allActiveProperties.txt"
