@@ -78,7 +78,7 @@ const getAllPropertiesKeys = async () => {
     "Woodstock",
     "Stratford",
     "Windsor",
-  ];;
+  ];
   const cityFilter = cities
     .map((city) => `contains(City,'${city}')`)
     .join(" or ");
@@ -86,31 +86,33 @@ const getAllPropertiesKeys = async () => {
   let lastListingKey = 0;
   let allKeys = [];
   let keepGoing = true;
-
-  while (keepGoing) {
-    let filter = `(${cityFilter}) and (ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}')) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-    console.log(filter);
-    const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
-      filter
-    )}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
-    const response = await fetch(url, {
-      headers: {
-        Authorization: process.env.BEARER_TOKEN_FOR_API,
-      },
-    });
-    const data = await response.json();
-    if (data.value && data.value.length > 0) {
-      allKeys.push(...data.value.map((item) => item.ListingKey));
-      if (data.value.length < 500) {
-        keepGoing = false;
+  const citiesSlice = [cities.slice(0, 15), cities.slice(15, cities.length)];
+  for (let i = 0; i < citiesSlice.length; i++) {
+    while (keepGoing) {
+      let filter = `(${cityFilter}) and (ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}')) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+      console.log(filter);
+      const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
+        filter
+      )}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: process.env.BEARER_TOKEN_FOR_API,
+        },
+      });
+      const data = await response.json();
+      if (data.value && data.value.length > 0) {
+        allKeys.push(...data.value.map((item) => item.ListingKey));
+        if (data.value.length < 500) {
+          keepGoing = false;
+        } else {
+          // Set lastListingKey and lastTimestamp to the last item's values
+          const lastItem = data.value[data.value.length - 1];
+          lastListingKey = lastItem.ListingKey;
+          lastTimestamp = lastItem.ModificationTimestamp;
+        }
       } else {
-        // Set lastListingKey and lastTimestamp to the last item's values
-        const lastItem = data.value[data.value.length - 1];
-        lastListingKey = lastItem.ListingKey;
-        lastTimestamp = lastItem.ModificationTimestamp;
+        keepGoing = false;
       }
-    } else {
-      keepGoing = false;
     }
   }
   fs.writeFileSync("Data/allActiveProperties.txt", JSON.stringify(allKeys));

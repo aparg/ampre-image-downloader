@@ -76,8 +76,9 @@ const deleteOldImages = async () => {
       files.forEach((file) => {
         // console.log(file);
         if (file.startsWith(key + "-")) {
-          if (path.join(imagesDir, file))
+          if (fs.existsSync(path.join(imagesDir, file)))
             fs.unlinkSync(path.join(imagesDir, file));
+          console.log(`Deleted image for ${file}`);
         }
       });
     }
