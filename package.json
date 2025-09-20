@@ -10,7 +10,8 @@
     "start": "node index.js",
     "getAllImages": "node Update/getAllImages.js",
     "updateImages": "node Update/updateImages.js",
-    "deleteImages": "node Delete/deleteImages.js"
+    "deleteImages": "node Delete/deleteImages.js",
+    "updateCommercialImages": "node Update/updateCommercialImages.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
