@@ -91,10 +91,11 @@ const getAllPropertiesKeys = async () => {
   for (let i = 0; i < citiesSlice.length; i++) {
     while (keepGoing) {
       let filter = `(${cityFilter}) and (ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}')) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-      console.log(filter);
+
       const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
         filter
       )}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+      console.log(url);
       const response = await fetch(url, {
         headers: {
           Authorization: process.env.BEARER_TOKEN_FOR_API,
