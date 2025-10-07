@@ -100,7 +100,7 @@ app.get("/", (req, res) => {
   res.json({ msg: "Welcome to image management app" });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(
     `${new Date(Date.now()).toLocaleString()}: Server running on port: ${PORT}`
   );
