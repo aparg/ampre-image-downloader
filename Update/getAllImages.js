@@ -5,6 +5,7 @@ require("dotenv").config();
 const getAllImages = async () => {
   // Read listing keys from test.txt
   await getAllPropertiesKeys();
+  console.log("All properties keys fetched");
   const listingKeys = JSON.parse(
     fs.readFileSync("Data/allActiveProperties.txt", "utf-8")
   );
