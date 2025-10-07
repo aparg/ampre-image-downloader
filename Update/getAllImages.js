@@ -100,6 +100,7 @@ const getAllPropertiesKeys = async () => {
           Authorization: process.env.BEARER_TOKEN_FOR_API,
         },
       });
+      console.log(response);
       const data = await response.json();
       if (data.value && data.value.length > 0) {
         allKeys.push(...data.value.map((item) => item.ListingKey));
