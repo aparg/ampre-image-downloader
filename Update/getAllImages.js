@@ -80,21 +80,21 @@ const getAllPropertiesKeys = async () => {
     "Stratford",
     "Windsor",
   ];
-  const cityFilter = cities
-    .map((city) => `contains(City,'${city}')`)
-    .join(" or ");
-  let lastTimestamp = startDate;
+  let lastTimestamp = startDate || "2024-01-01T00:00:00Z";
   let lastListingKey = 0;
   let allKeys = [];
-  let keepGoing = true;
   const citiesSlice = [cities.slice(0, 15), cities.slice(15, cities.length)];
   for (let i = 0; i < citiesSlice.length; i++) {
+    const cityFilter = citiesSlice[i]
+      .map((city) => `contains(City,'${city}')`)
+      .join(" or ");
+    let keepGoing = true;
+    lastTimestamp = startDate || "2024-01-01T00:00:00Z";
+    lastListingKey = 0;
     while (keepGoing) {
       let filter = `(${cityFilter}) and (ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}')) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
 
-      const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
-        filter
-      )}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+      const url = `https://query.ampre.ca/odata/Property?$filter=${filter}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
       console.log(url);
       const response = await fetch(url, {
         headers: {
