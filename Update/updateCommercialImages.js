@@ -70,9 +70,7 @@ const updateCommercialImagesOnly = async () => {
       let filter = `(${cityFilter(
         citiesSlice[i]
       )}) and ((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or (MediaChangeTimestamp gt ${oneHourAgo})) and ContractStatus eq 'Available' and StandardStatus eq 'Active' and PropertyType eq 'Commercial'`;
-      const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
-        filter
-      )}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+      const url = `https://query.ampre.ca/odata/Property?$filter=${filter}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
       console.log(url);
       const response = await fetch(url, {
         headers: {
