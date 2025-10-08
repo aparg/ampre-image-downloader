@@ -15,6 +15,18 @@ const getAllImages = async () => {
   }
 
   for (const key of listingKeys) {
+    // Check if any images already exist for this key
+    const existingImages = fs
+      .readdirSync(imagesDir)
+      .filter((file) => file.startsWith(key + "-"));
+
+    if (existingImages.length > 0) {
+      console.log(
+        `Skipping ${key} - already has ${existingImages.length} images`
+      );
+      continue;
+    }
+
     console.log("Fetching media request for " + key);
     const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
     const response = await fetch(url, {
@@ -41,6 +53,7 @@ const getAllImages = async () => {
       }
     }
   }
+  console.log("All images downloaded successfully!");
 };
 
 const getAllPropertiesKeys = async () => {
