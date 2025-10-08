@@ -80,19 +80,51 @@ const getAllPropertiesKeys = async () => {
     "Stratford",
     "Windsor",
   ];
-  let lastTimestamp = startDate || "2024-01-01T00:00:00Z";
-  let lastListingKey = 0;
+
+  let allKeys = [];
+
+  // Fetch Sale of Business properties (for Restaurants and Convenience Stores)
+  console.log("Fetching Sale of Business properties...");
+  const saleOfBusinessKeys = await fetchPropertiesByType(
+    "PropertySubType eq 'Sale Of Business'",
+    cities
+  );
+  allKeys.push(...saleOfBusinessKeys);
+  console.log(`Found ${saleOfBusinessKeys.length} Sale of Business properties`);
+
+  // Fetch Commercial Lease properties (for Office/Professional spaces)
+  console.log("Fetching Commercial Lease properties...");
+  const commercialLeaseKeys = await fetchPropertiesByType(
+    "PropertyType eq 'Commercial' and TransactionType eq 'For Lease'",
+    cities
+  );
+  allKeys.push(...commercialLeaseKeys);
+  console.log(
+    `Found ${commercialLeaseKeys.length} Commercial Lease properties`
+  );
+
+  // Remove duplicates
+  allKeys = [...new Set(allKeys)];
+  console.log(`Total unique properties: ${allKeys.length}`);
+
+  fs.writeFileSync("Data/allActiveProperties.txt", JSON.stringify(allKeys));
+};
+
+const fetchPropertiesByType = async (typeFilter, cities) => {
   let allKeys = [];
   const citiesSlice = [cities.slice(0, 15), cities.slice(15, cities.length)];
+
   for (let i = 0; i < citiesSlice.length; i++) {
     const cityFilter = citiesSlice[i]
       .map((city) => `contains(City,'${city}')`)
       .join(" or ");
+
     let keepGoing = true;
-    lastTimestamp = startDate || "2024-01-01T00:00:00Z";
-    lastListingKey = 0;
+    let lastTimestamp = startDate || "2024-01-01T00:00:00Z";
+    let lastListingKey = 0;
+
     while (keepGoing) {
-      let filter = `(${cityFilter}) and (ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}')) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+      let filter = `(${cityFilter}) and ${typeFilter} and (ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt '${lastListingKey}')) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
 
       const url = `https://query.ampre.ca/odata/Property?$filter=${filter}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
 
@@ -108,7 +140,6 @@ const getAllPropertiesKeys = async () => {
         if (data.value.length < 500) {
           keepGoing = false;
         } else {
-          // Set lastListingKey and lastTimestamp to the last item's values
           const lastItem = data.value[data.value.length - 1];
           lastListingKey = lastItem.ListingKey;
           lastTimestamp = lastItem.ModificationTimestamp;
@@ -118,7 +149,8 @@ const getAllPropertiesKeys = async () => {
       }
     }
   }
-  fs.writeFileSync("Data/allActiveProperties.txt", JSON.stringify(allKeys));
+
+  return allKeys;
 };
 
 const [, , startDate, endDate] = process.argv;

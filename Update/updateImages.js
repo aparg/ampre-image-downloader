@@ -59,58 +59,43 @@ const updateImages = async () => {
     "Stratford",
     "Windsor",
   ];
-  console.log(`Downloaded images for ${oneHourAgo} to ${nowTime}`);
+  console.log(`Updating images for ${oneHourAgo} to ${nowTime}`);
   const cityFilter = (cities) =>
     cities.map((city) => `contains(City,'${city}')`).join(" or ");
-  while (keepGoing) {
-    // Fetch listings modified or with media changed in the last hour
-    // let filter = `(ModificationTimestamp gt ${lastTimestamp} or (ModificationTimestamp eq ${lastTimestamp} and ListingKey gt 'X12314516') or MediaChangeTimestamp gt ${oneHourAgo}) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-    const citiesSlice = [cities.slice(0, 15), cities.slice(15, cities.length)];
-    let data = { value: [] };
-    for (let i = 0; i < citiesSlice.length; i++) {
-      let filter = `(${cityFilter(
-        citiesSlice[i]
-      )}) and ((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime}  and ListingKey gt '${lastListingKey}') or (MediaChangeTimestamp gt ${oneHourAgo})) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-      const url = `https://query.ampre.ca/odata/Property?$filter=${filter}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
-      console.log(url);
-      const response = await fetch(url, {
-        headers: {
-          Authorization: process.env.BEARER_TOKEN_FOR_API,
-        },
-      });
-      const responseJson = await response.json();
-      console.log(responseJson);
-      data.value = [...data.value, ...responseJson.value];
-    }
-    if (data.value && data.value.length > 0) {
-      console.log("Total data:" + data.value.length);
-      for (const item of data.value) {
-        console.log("Pushing key " + item.ListingKey + " for download");
-        recentKeys.push(item.ListingKey);
-        // Remove previous images if MediaChangeTimestamp is within the last hour
-        if (
-          item.MediaChangeTimestamp &&
-          new Date(item.MediaChangeTimestamp) > new Date(oneHourAgo)
-        ) {
-          // Remove all images for this listing key
-          const files = fs.readdirSync(imagesDir);
-          files.forEach((file) => {
-            if (file.startsWith(item.ListingKey + "-")) {
-              fs.unlinkSync(path.join(imagesDir, file));
-            }
-          });
-        }
+
+  // Fetch Sale of Business properties (Restaurants & Convenience Stores)
+  console.log("Fetching Sale of Business updates...");
+  const saleOfBusinessKeys = await fetchRecentPropertiesByType(
+    "PropertySubType eq 'Sale Of Business'",
+    cities,
+    cityFilter,
+    oneHourAgo,
+    nowTime
+  );
+  recentKeys.push(...saleOfBusinessKeys);
+
+  // Fetch Commercial Lease properties (Office/Professional spaces)
+  console.log("Fetching Commercial Lease updates...");
+  const commercialLeaseKeys = await fetchRecentPropertiesByType(
+    "PropertyType eq 'Commercial' and TransactionType eq 'For Lease'",
+    cities,
+    cityFilter,
+    oneHourAgo,
+    nowTime
+  );
+  recentKeys.push(...commercialLeaseKeys);
+
+  console.log(`Total properties to update: ${recentKeys.length}`);
+
+  // Remove old images for properties with media changes
+  for (const key of recentKeys) {
+    const files = fs.readdirSync(imagesDir);
+    files.forEach((file) => {
+      if (file.startsWith(key + "-")) {
+        fs.unlinkSync(path.join(imagesDir, file));
+        console.log(`Removed old image: ${file}`);
       }
-      if (data.value.length < 500) {
-        keepGoing = false;
-      } else {
-        const lastItem = data.value[data.value.length - 1];
-        lastListingKey = lastItem.ListingKey;
-        lastTimestamp = lastItem.ModificationTimestamp;
-      }
-    } else {
-      keepGoing = false;
-    }
+    });
   }
 
   // Now fetch and save images for these keys
@@ -154,7 +139,62 @@ const updateImages = async () => {
       console.log("Error fetching data: " + err);
     }
   }
-  console.log(`Downloaded images for ${oneHourAgo} to ${nowTime}`);
+  console.log(`Finished updating images for ${oneHourAgo} to ${nowTime}`);
+};
+
+const fetchRecentPropertiesByType = async (
+  typeFilter,
+  cities,
+  cityFilter,
+  oneHourAgo,
+  nowTime
+) => {
+  let recentKeys = [];
+  let lastTimestamp = oneHourAgo;
+  let lastListingKey = 0;
+  let keepGoing = true;
+
+  while (keepGoing) {
+    const citiesSlice = [cities.slice(0, 15), cities.slice(15, cities.length)];
+    let data = { value: [] };
+
+    for (let i = 0; i < citiesSlice.length; i++) {
+      let filter = `(${cityFilter(
+        citiesSlice[i]
+      )}) and ${typeFilter} and ((ModificationTimestamp ge ${lastTimestamp} and ModificationTimestamp le ${nowTime} and ListingKey gt '${lastListingKey}') or (MediaChangeTimestamp gt ${oneHourAgo})) and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+
+      const url = `https://query.ampre.ca/odata/Property?$filter=${filter}&$select=ListingKey,ModificationTimestamp,MediaChangeTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+      console.log(url);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: process.env.BEARER_TOKEN_FOR_API,
+        },
+      });
+      const responseJson = await response.json();
+      console.log(responseJson);
+      data.value = [...data.value, ...responseJson.value];
+    }
+
+    if (data.value && data.value.length > 0) {
+      console.log("Total data:" + data.value.length);
+      for (const item of data.value) {
+        console.log("Pushing key " + item.ListingKey + " for download");
+        recentKeys.push(item.ListingKey);
+      }
+      if (data.value.length < 500) {
+        keepGoing = false;
+      } else {
+        const lastItem = data.value[data.value.length - 1];
+        lastListingKey = lastItem.ListingKey;
+        lastTimestamp = lastItem.ModificationTimestamp;
+      }
+    } else {
+      keepGoing = false;
+    }
+  }
+
+  return recentKeys;
 };
 
 updateImages();
