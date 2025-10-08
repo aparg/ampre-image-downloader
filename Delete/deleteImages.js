@@ -14,49 +14,75 @@ const deleteOldImages = async () => {
   // ).toISOString();
   // console.log(threeMonthsAgo);
   const threeMonthsAgo = "2025-08-01T08:00:00Z";
-  // Fetch listing keys from last 3 months
-  let lastTimestamp = threeMonthsAgo;
-  let lastListingKey = 0;
-  let keepGoing = true;
-  let recentKeys = [];
-  let limit = 0;
   const allActivePropertiesPath = path.join(
     __dirname,
     "../Data/allActiveProperties.txt"
   );
-  while (keepGoing) {
-    let filter = `ModificationTimestamp ge ${lastTimestamp} and ListingKey ge '${lastListingKey}' and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
-    console.log(filter);
-    const url = `https://query.ampre.ca/odata/Property?$filter=${encodeURIComponent(
-      filter
-    )}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=MediaChangeTimestamp,ListingKey`;
-    // console.log(url);
-    const response = await fetch(url, {
-      headers: {
-        Authorization: process.env.BEARER_TOKEN_FOR_API,
-      },
-    });
-    const data = await response.json();
-    // console.log(data.value.length);
-    // console.log(
-    //   data.value[data.value.length - 1].ListingKey,
-    //   data.value[data.value.length - 1].ModificationTimestamp
-    // );
 
-    //check if this is there is a last element here as we are only getting 500 listings in each request
-    if (data.value && data.value.length > 0) {
-      recentKeys.push(...data.value.map((item) => item.ListingKey));
-      if (data.value.length < 500) {
-        keepGoing = false;
-      } else {
-        const lastItem = data.value[data.value.length - 1];
-        lastListingKey = lastItem.ListingKey;
-        lastTimestamp = lastItem.ModificationTimestamp;
-      }
-    } else {
-      keepGoing = false;
-    }
-  }
+  const cities = [
+    "Toronto",
+    "Mississauga",
+    "Brampton",
+    "Vaughan",
+    "Markham",
+    "Richmond Hill",
+    "Pickering",
+    "Ajax",
+    "Whitby",
+    "Oshawa",
+    "Newmarket",
+    "Aurora",
+    "King City",
+    "Caledon",
+    "Milton",
+    "Oakville",
+    "Burlington",
+    "Hamilton",
+    "Guelph",
+    "Kitchener",
+    "Waterloo",
+    "Cambridge",
+    "Brantford",
+    "Barrie",
+    "St. Catharines",
+    "Niagara Falls",
+    "Grimsby",
+    "Peterborough",
+    "Kingston",
+    "Belleville",
+    "London",
+    "Woodstock",
+    "Stratford",
+    "Windsor",
+  ];
+
+  let recentKeys = [];
+
+  // Fetch Sale of Business properties (for Restaurants and Convenience Stores)
+  console.log("Fetching active Sale of Business properties...");
+  const saleOfBusinessKeys = await fetchActivePropertiesByType(
+    "PropertySubType eq 'Sale Of Business'",
+    cities,
+    threeMonthsAgo
+  );
+  recentKeys.push(...saleOfBusinessKeys);
+  console.log(`Found ${saleOfBusinessKeys.length} Sale of Business properties`);
+
+  // Fetch Commercial Lease properties (for Office/Professional spaces)
+  console.log("Fetching active Commercial Lease properties...");
+  const commercialLeaseKeys = await fetchActivePropertiesByType(
+    "PropertyType eq 'Commercial' and TransactionType eq 'For Lease'",
+    cities,
+    threeMonthsAgo
+  );
+  recentKeys.push(...commercialLeaseKeys);
+  console.log(
+    `Found ${commercialLeaseKeys.length} Commercial Lease properties`
+  );
+
+  // Remove duplicates
+  recentKeys = [...new Set(recentKeys)];
+  console.log(`Total active properties: ${recentKeys.length}`);
 
   // Remove images and update allActiveListings
   const imagesDir = path.join(__dirname, "../Data/Images");
@@ -89,6 +115,54 @@ const deleteOldImages = async () => {
   console.log(
     "Cleanup complete. Updated active listings and removed old images."
   );
+};
+
+const fetchActivePropertiesByType = async (
+  typeFilter,
+  cities,
+  threeMonthsAgo
+) => {
+  let recentKeys = [];
+  const citiesSlice = [cities.slice(0, 15), cities.slice(15, cities.length)];
+
+  for (let i = 0; i < citiesSlice.length; i++) {
+    const cityFilter = citiesSlice[i]
+      .map((city) => `contains(City,'${city}')`)
+      .join(" or ");
+
+    let keepGoing = true;
+    let lastTimestamp = threeMonthsAgo;
+    let lastListingKey = 0;
+
+    while (keepGoing) {
+      let filter = `(${cityFilter}) and ${typeFilter} and ModificationTimestamp ge ${lastTimestamp} and ListingKey ge '${lastListingKey}' and ContractStatus eq 'Available' and StandardStatus eq 'Active'`;
+
+      const url = `https://query.ampre.ca/odata/Property?$filter=${filter}&$select=ListingKey,ModificationTimestamp&$top=500&$orderby=ModificationTimestamp,ListingKey`;
+      console.log(url);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: process.env.BEARER_TOKEN_FOR_API,
+        },
+      });
+      const data = await response.json();
+
+      if (data.value && data.value.length > 0) {
+        recentKeys.push(...data.value.map((item) => item.ListingKey));
+        if (data.value.length < 500) {
+          keepGoing = false;
+        } else {
+          const lastItem = data.value[data.value.length - 1];
+          lastListingKey = lastItem.ListingKey;
+          lastTimestamp = lastItem.ModificationTimestamp;
+        }
+      } else {
+        keepGoing = false;
+      }
+    }
+  }
+
+  return recentKeys;
 };
 
 deleteOldImages();
