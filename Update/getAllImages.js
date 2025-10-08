@@ -2,6 +2,24 @@ const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
+// Helper function to add delay
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Helper function to retry fetch with exponential backoff
+const fetchWithRetry = async (url, options, maxRetries = 3) => {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      const waitTime = Math.pow(2, i) * 1000; // Exponential backoff: 1s, 2s, 4s
+      console.log(`Retry ${i + 1}/${maxRetries} after ${waitTime}ms...`);
+      await delay(waitTime);
+    }
+  }
+};
+
 const getAllImages = async () => {
   // Read listing keys from test.txt
   await getAllPropertiesKeys();
@@ -25,29 +43,43 @@ const getAllImages = async () => {
     }
 
     console.log("Downloading images for " + key);
-    const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
-    const response = await fetch(url, {
-      headers: {
-        Authorization: process.env.BEARER_TOKEN_FOR_API,
-      },
-    });
-    const data = await response.json();
-    if (Array.isArray(data.value)) {
-      // Sort so PreferredPhotoYN === true come first
-      data.value.sort(
-        (a, b) => (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
-      );
-      console.log(data.value.map((item) => item.PreferredPhotoYN));
-      for (let i = 0; i < data.value.length; i++) {
-        const mediaURL = data.value[i].MediaURL;
-        if (mediaURL) {
-          const imgRes = await fetch(mediaURL);
-          const arrayBuffer = await imgRes.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          fs.writeFileSync(path.join(imagesDir, `${key}-${i}.jpg`), buffer);
-          console.log(`Downloaded image for ${key}-${i}`);
+
+    try {
+      const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
+      const response = await fetchWithRetry(url, {
+        headers: {
+          Authorization: process.env.BEARER_TOKEN_FOR_API,
+        },
+      });
+      const data = await response.json();
+
+      if (Array.isArray(data.value) && data.value.length > 0) {
+        // Sort so PreferredPhotoYN === true come first
+        data.value.sort(
+          (a, b) =>
+            (b.PreferredPhotoYN === true) - (a.PreferredPhotoYN === true)
+        );
+
+        for (let i = 0; i < data.value.length; i++) {
+          const mediaURL = data.value[i].MediaURL;
+          if (mediaURL) {
+            const imgRes = await fetchWithRetry(mediaURL);
+            const arrayBuffer = await imgRes.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            fs.writeFileSync(path.join(imagesDir, `${key}-${i}.jpg`), buffer);
+            console.log(`Downloaded image for ${key}-${i}`);
+          }
         }
+        console.log(`✓ Completed ${key} (${data.value.length} images)`);
+      } else {
+        console.log(`No images found for ${key}`);
       }
+
+      // Small delay to avoid overwhelming the server
+      await delay(100);
+    } catch (error) {
+      console.error(`Error downloading images for ${key}:`, error.message);
+      console.log(`Skipping ${key} and continuing...`);
     }
   }
   console.log("All images downloaded successfully!");

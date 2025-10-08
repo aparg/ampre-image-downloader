@@ -87,27 +87,27 @@ const updateImages = async () => {
 
   console.log(`Total properties to update: ${recentKeys.length}`);
 
-  // Remove old images for properties with media changes
-  for (const key of recentKeys) {
-    const files = fs.readdirSync(imagesDir);
-    files.forEach((file) => {
-      if (file.startsWith(key + "-")) {
-        fs.unlinkSync(path.join(imagesDir, file));
-        console.log(`Removed old image: ${file}`);
-      }
-    });
-  }
-
-  // Now fetch and save images for these keys
+  // Fetch and save images for these keys
   for (const key of recentKeys) {
     try {
+      console.log("Updating images for " + key);
+
+      // Remove old images first for this property
+      const files = fs.readdirSync(imagesDir);
+      files.forEach((file) => {
+        if (file.startsWith(key + "-")) {
+          fs.unlinkSync(path.join(imagesDir, file));
+          console.log(`Removed old image: ${file}`);
+        }
+      });
+
+      // Now download fresh images
       const url = `https://query.ampre.ca/odata/Media?$select=MediaURL,PreferredPhotoYN&$filter=ResourceRecordKey eq '${key}' and ImageSizeDescription eq 'Large' and MediaStatus eq 'Active'`;
       const response = await fetch(url, {
         headers: {
           Authorization: process.env.BEARER_TOKEN_FOR_API,
         },
       });
-      console.log(response);
       const data = await response.json();
       if (Array.isArray(data.value)) {
         // Sort so PreferredPhotoYN === true come first
