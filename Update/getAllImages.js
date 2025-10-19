@@ -112,6 +112,7 @@ const getAllPropertiesKeys = async () => {
     "Ajax",
     "Whitby",
     "Oshawa",
+    "Clarington",
     "Newmarket",
     "Aurora",
     "King City",
@@ -178,7 +179,7 @@ const fetchPropertiesByType = async (typeFilter, cities) => {
       .join(" or ");
 
     let keepGoing = true;
-    let lastTimestamp = "2024-01-01T00:00:00Z";
+    let lastTimestamp = "2020-01-01T00:00:00Z";
     let lastListingKey = 0;
 
     while (keepGoing) {
