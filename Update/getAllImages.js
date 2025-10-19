@@ -33,15 +33,6 @@ const getAllImages = async () => {
   }
 
   for (const key of listingKeys) {
-    // Check if any images already exist for this key
-    const existingImages = fs
-      .readdirSync(imagesDir)
-      .filter((file) => file.startsWith(key + "-"));
-
-    if (existingImages.length > 0) {
-      continue;
-    }
-
     console.log("Downloading images for " + key);
 
     try {
