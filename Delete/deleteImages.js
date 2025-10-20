@@ -9,11 +9,10 @@ const deleteOldImages = async () => {
 
   // Calculate date 3 months ago
   const now = new Date();
-  // const threeMonthsAgo = new Date(
-  //   now.setMonth(now.getMonth() - 3)
-  // ).toISOString();
-  // console.log(threeMonthsAgo);
-  const threeMonthsAgo = "2025-08-01T08:00:00Z";
+  const threeMonthsAgo = new Date(
+    now.setMonth(now.getMonth() - 3)
+  ).toISOString();
+  console.log("Deleting images for properties older than:", threeMonthsAgo);
   const allActivePropertiesPath = path.join(
     __dirname,
     "../Data/allActiveProperties.txt"
@@ -30,6 +29,7 @@ const deleteOldImages = async () => {
     "Ajax",
     "Whitby",
     "Oshawa",
+    "Clarington",
     "Newmarket",
     "Aurora",
     "King City",

@@ -34,6 +34,7 @@ const updateImages = async () => {
     "Ajax",
     "Whitby",
     "Oshawa",
+    "Clarington",
     "Newmarket",
     "Aurora",
     "King City",

@@ -10,7 +10,7 @@ const updateCommercialImagesOnly = async () => {
   // Get ISO string for 1 hour ago
   const now = new Date();
   console.log(new Date(now.getTime()).toISOString());
-  const oneHourAgo = new Date(now.getTime() - 43800 * 60 * 1000).toISOString();
+  const oneHourAgo = new Date(now.getTime() - 8 * 60 * 1000).toISOString();
   //the now time is reduced by 3 minutes to account for any delays in the ampre server updates
   //the time covered for each update iteration is 5 minutes total
   const nowTime = new Date(now.getTime() - 3 * 60 * 1000).toISOString();
@@ -33,6 +33,7 @@ const updateCommercialImagesOnly = async () => {
     "Ajax",
     "Whitby",
     "Oshawa",
+    "Clarington",
     "Newmarket",
     "Aurora",
     "King City",
